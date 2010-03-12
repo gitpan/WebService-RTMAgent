@@ -89,7 +89,7 @@ package WebService::RTMAgent;
 
 use strict;
 
-our $VERSION = '0.5';
+our $VERSION = '0.5_1';
 
 use LWP::UserAgent;
 use XML::Simple;  # apt-get install libxml-simple-perl
@@ -119,6 +119,7 @@ sub new {
     my ($class) = @_;
     my $self = bless {}, $class;
     $self->verbose('');
+    $self->max_redirect(7); # Some systems don't have the default, apparently
     return $self;
 }
 
@@ -213,6 +214,8 @@ to give their username and password to third party software (like this one).
 sub get_auth_url {
     my ($self) = @_;
 
+    $self->check_init;
+
     my $res = $self->auth_getFrob();
 
     my $frob = $res->{'frob'}->[0];
@@ -280,6 +283,18 @@ sub sign {
     return md5_hex($self->api_secret."$sign_str");
 }
 
+=item $ua->check_init;
+
+Checks api_key and api_secret have been defined. This is for robustness
+calls before requesting authentication url or request.
+
+=cut
+sub check_init {
+    my ($self) = @_;
+    croak "API key not defined" unless defined $self->api_key;
+    croak "API secret not defined" unless defined $self->api_secret;
+}
+
 =item $ua->rtm_request("rtm.tasks.getList", "list_id=234", "taskseries_id=2"..)
 
 Signs the parameters, performs the request, returns a parsed XML::Simple
@@ -288,6 +303,8 @@ object.
 =cut
 sub rtm_request {
     my ($self, $request, @params) = @_;
+
+    $self->check_init;
 
     unshift @params, "method=$request";
     push @params, "api_key=".$self->api_key;

@@ -11,6 +11,7 @@ WriteMakefile(
     PREREQ_PM => {
         'Test::More' => 0,
         'LWP::UserAgent' => 0,
+        'XML::SAX' => 0,
         'XML::Simple' => 0,
         'Digest::MD5' => 0,
     },

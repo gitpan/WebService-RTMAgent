@@ -59,7 +59,7 @@ eval {
     $ua = new WebService::RTMAgent;
     $ua->init;
 };
-ok($@ =~ /Invalid XML file/, "Don't start if config file isn't XML");
+ok($@ =~ /Invalid XML file/, "Don't start if config file isn't XML ($@)");
 
 
 

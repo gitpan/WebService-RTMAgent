@@ -1,5 +1,9 @@
 Revision history for Net-RTMAgent
 
+0.6
+        Added XML::SAX dependency; XML::Simple doesn't work
+        as expected without it.
+
 0.5     14 March 2008
 	Fixed dependencies in Makefile.PL
 
