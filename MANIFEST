@@ -1,16 +1,16 @@
-.cvsignore
 Changes
-lib/WebService/RTMAgent.pm
-Makefile.PL
+LICENSE
 MANIFEST
+META.json
+META.yml
+Makefile.PL
 README
-t/00-load.t
+dist.ini
+lib/WebService/RTMAgent.pm
+t/000-report-versions-tiny.t
 t/auth.t
-t/boilerplate.t
 t/config
 t/init.t
-t/pod-coverage.t
-t/pod.t
 t/request.addtask
 t/request.badparam
 t/request.badtoken
@@ -37,4 +37,5 @@ t/response.tasklist
 t/response.timeline
 t/response.unknown
 t/undo.t
-META.yml                                 Module meta-data (added by MakeMaker)
+xt/release/changes_has_content.t
+xt/release/pod-syntax.t

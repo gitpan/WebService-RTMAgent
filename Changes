@@ -1,12 +1,12 @@
-Revision history for Net-RTMAgent
+Revision history for WebService-RTMAgent
 
-0.6
-        Added XML::SAX dependency; XML::Simple doesn't work
-        as expected without it.
+0.600     2013-11-10 20:02:31 America/New_York
+        - tried to make tests pass reliably
+        - use https
 
-0.5     14 March 2008
-	Fixed dependencies in Makefile.PL
+0.5       14 March 2008
+	      - Fixed dependencies in Makefile.PL
 
-0.05    16 December 2007
-        First CPAN version, released on an unsuspecting world.
+0.05      16 December 2007
+        - First CPAN version, released on an unsuspecting world.
 

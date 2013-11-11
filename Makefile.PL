@@ -1,20 +1,83 @@
+
 use strict;
 use warnings;
-use ExtUtils::MakeMaker;
 
-WriteMakefile(
-    NAME                => 'WebService::RTMAgent',
-    AUTHOR              => 'Yves Rutschle <cpan@rutschle.net>',
-    VERSION_FROM        => 'lib/WebService/RTMAgent.pm',
-    ABSTRACT_FROM       => 'lib/WebService/RTMAgent.pm',
-    PL_FILES            => {},
-    PREREQ_PM => {
-        'Test::More' => 0,
-        'LWP::UserAgent' => 0,
-        'XML::SAX' => 0,
-        'XML::Simple' => 0,
-        'Digest::MD5' => 0,
-    },
-    dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean               => { FILES => 'WebService-RTMAgent-*' },
+
+
+use ExtUtils::MakeMaker 6.30;
+
+
+
+my %WriteMakefileArgs = (
+  "ABSTRACT" => "a user agent for the Remember The Milk API",
+  "AUTHOR" => "Yves Rutschle",
+  "BUILD_REQUIRES" => {},
+  "CONFIGURE_REQUIRES" => {
+    "ExtUtils::MakeMaker" => "6.30"
+  },
+  "DISTNAME" => "WebService-RTMAgent",
+  "EXE_FILES" => [],
+  "LICENSE" => "perl",
+  "NAME" => "WebService::RTMAgent",
+  "PREREQ_PM" => {
+    "Carp" => 0,
+    "Digest::MD5" => 0,
+    "LWP::Protocol::https" => 0,
+    "LWP::UserAgent" => 0,
+    "XML::Simple" => 0,
+    "parent" => 0,
+    "strict" => 0,
+    "warnings" => 0
+  },
+  "TEST_REQUIRES" => {
+    "Data::Dumper" => 0,
+    "English" => 0,
+    "File::Copy" => 0,
+    "File::Spec" => 0,
+    "File::Temp" => 0,
+    "HTTP::Response" => 0,
+    "HTTP::Status" => 0,
+    "Test::More" => "0.96",
+    "base" => 0
+  },
+  "VERSION" => "0.600",
+  "test" => {
+    "TESTS" => "t/*.t"
+  }
 );
+
+
+my %FallbackPrereqs = (
+  "Carp" => 0,
+  "Data::Dumper" => 0,
+  "Digest::MD5" => 0,
+  "English" => 0,
+  "File::Copy" => 0,
+  "File::Spec" => 0,
+  "File::Temp" => 0,
+  "HTTP::Response" => 0,
+  "HTTP::Status" => 0,
+  "LWP::Protocol::https" => 0,
+  "LWP::UserAgent" => 0,
+  "Test::More" => "0.96",
+  "XML::Simple" => 0,
+  "base" => 0,
+  "parent" => 0,
+  "strict" => 0,
+  "warnings" => 0
+);
+
+
+unless ( eval { ExtUtils::MakeMaker->VERSION(6.63_03) } ) {
+  delete $WriteMakefileArgs{TEST_REQUIRES};
+  delete $WriteMakefileArgs{BUILD_REQUIRES};
+  $WriteMakefileArgs{PREREQ_PM} = \%FallbackPrereqs;
+}
+
+delete $WriteMakefileArgs{CONFIGURE_REQUIRES}
+  unless eval { ExtUtils::MakeMaker->VERSION(6.52) };
+
+WriteMakefile(%WriteMakefileArgs);
+
+
+
