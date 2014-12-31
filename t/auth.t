@@ -9,7 +9,7 @@ use warnings;
 use Test::More tests => 7;
 
 use WebService::RTMAgent;
-my $config_file = "/tmp/config";
+my $config_file = "config.tmp";
 $WebService::RTMAgent::config_file = $config_file;
 unlink $WebService::RTMAgent::config_file;
 
@@ -17,7 +17,8 @@ unlink $WebService::RTMAgent::config_file;
 # Instead, we use request.* files that contains the tested
 # requests, and return the expected responses found in
 # response.* files.
-package RTMTestAgent;
+package
+  RTMTestAgent;
 use base 'WebService::RTMAgent';
 use HTTP::Response;
 use HTTP::Status;
@@ -62,7 +63,7 @@ eval {
 ok($@ =~ /98: Login failed/, "Invalid token is caught");
 
 # Authentication URL tests
-ok($ua->get_auth_url eq "https://www.rememberthemilk.com/services/auth/?api_key=key&perms=delete&frob=0c9107b07a7e64fa460af183a6c0f01e7d0e3d54&api_sig=60e3e68636e2319a8977606c05499df5", "Checking authentication URL");
+ok($ua->get_auth_url eq "https://api.rememberthemilk.com/services/auth/?api_key=key&perms=delete&frob=0c9107b07a7e64fa460af183a6c0f01e7d0e3d54&api_sig=60e3e68636e2319a8977606c05499df5", "Checking authentication URL");
 ok($WebService::RTMAgent::config->{frob} eq "0c9107b07a7e64fa460af183a6c0f01e7d0e3d54", "Checking the config file");
 
 # Getting token and timeline

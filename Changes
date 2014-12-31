@@ -1,5 +1,9 @@
 Revision history for WebService-RTMAgent
 
+0.601     2014-12-31 15:15:03-05:00 America/New_York
+        - use api.rememberthemilk.com, not www.rememberthemilk.com (thanks,
+          Vince Broz!)
+
 0.600     2013-11-10 20:02:31 America/New_York
         - tried to make tests pass reliably
         - use https

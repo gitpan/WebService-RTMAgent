@@ -1,11 +1,91 @@
 use strict;
 use warnings;
 package WebService::RTMAgent;
-{
-  $WebService::RTMAgent::VERSION = '0.600';
-}
 # ABSTRACT: a user agent for the Remember The Milk API
-
+$WebService::RTMAgent::VERSION = '0.601';
+#pod =head1 SYNOPSIS
+#pod
+#pod  $ua = WebService::RTMAgent->new;
+#pod  $ua->api_key($key_provided_by_rtm);
+#pod  $ua->api_secret($secret_provided_by_rtm);
+#pod  $ua->init;
+#pod  $url = $ua->get_auth_url;  # then do something with the URL
+#pod  $res = $ua->tasks_getList('filter=status:incomplete');
+#pod
+#pod  ...
+#pod
+#pod =head1 DESCRIPTION
+#pod
+#pod WebService::RTMAgent is a Perl implementation of the rememberthemilk.com API.
+#pod
+#pod =head2 Calling API methods
+#pod
+#pod All API methods documented at L<https://www.rememberthemilk.com/services/api/>
+#pod can be called as methods, changing dots for underscores and optionnaly taking
+#pod off the leading 'rtm': C<< $ua->auth_checkToken >>, C<< $ua->tasks_add >>, etc.
+#pod
+#pod Parameters should be given as a list of strings, e.g.:
+#pod
+#pod   $ua->tasks_complete(
+#pod     "list_id=4231233",
+#pod     "taskseries_id=124233",
+#pod     "task_id=1234",
+#pod   );
+#pod
+#pod Refer to the API documentation for each method's parameters.
+#pod
+#pod Return values are the XML response, parsed through L<XML::Simple>. Please refer
+#pod to XML::Simple for more information (and Data::Dumper, to see what the values
+#pod look like) and the sample B<rtm> script for examples.
+#pod
+#pod If the method call was not successful, C<undef> is returned, and an error
+#pod message is set which can be accessed with the B<error> method:
+#pod
+#pod   $res = $ua->tasks_getList;
+#pod   die $ua->error unless defined $res;
+#pod
+#pod Please note that at this stage, I am not very sure that this is the best way to implement the API. "It works for me," but:
+#pod
+#pod =for :list
+#pod * Parameters may turn to hashes at some point
+#pod * Output values may turn to something more abstract and useful,
+#pod   as I gain experience with API usage.
+#pod
+#pod =head2 Authentication and authorisation
+#pod
+#pod Before using the API, you need to authenticate it. If you are going to be
+#pod building a desktop application, you should get an API key and shared secret
+#pod from the people at rememberthemilk.com (see
+#pod L<https://groups.google.com/group/rememberthemilk-api/browse_thread/thread/dcb035f162d4dcc8>
+#pod for rationale) and provide them to RTMAgent.pm with the C<api_key> and
+#pod C<api_secret> methods.
+#pod
+#pod You then need to proceed through the authentication cycle: create a useragent,
+#pod call the get_auth_url method and direct a Web browser to the URL it returns.
+#pod There RememberTheMilk will present you with an authorisation page: you can
+#pod authorise the API to access your account.
+#pod
+#pod At that stage, the API will get a token which identifies the API/user
+#pod authorisation. B<RTMAgent> saves the token in a file, so you should never need
+#pod to do the authentication again.
+#pod
+#pod =head2 Proxy and other strange things
+#pod
+#pod The object returned by B<new> is also a LWP::UserAgent. This means you can
+#pod configure it the same way, in particular to cross proxy servers:
+#pod
+#pod   $ua = new WebService::RTMAgent;
+#pod   $ua->api_key($key);
+#pod   $ua->api_secret($secret);
+#pod   $ua->proxy('http', 'https://proxy:8080');
+#pod   $ua->init;
+#pod   $list = $ua->tasks_getList;
+#pod
+#pod Incidentally, this is the reason why the C<init> method exists: C<init> needs
+#pod to access the network, so its work cannot be done in C<new> as that would leave
+#pod no opportunity to configure the LWP::UserAgent.
+#pod
+#pod =cut
 
 use Carp;
 use Digest::MD5 qw(md5_hex);
@@ -14,12 +94,19 @@ use XML::Simple;
 
 use parent 'LWP::UserAgent';
 
-my $REST_endpoint = "https://www.rememberthemilk.com/services/rest/";
-my $auth_endpoint = "https://www.rememberthemilk.com/services/auth/";
+my $REST_endpoint = "https://api.rememberthemilk.com/services/rest/";
+my $auth_endpoint = "https://api.rememberthemilk.com/services/auth/";
 
 our $config_file = "$ENV{HOME}/.rtmagent";
 our $config;  # reference to config hash
 
+#pod =head1 PUBLIC METHODS
+#pod
+#pod =head2 $ua = WebService::RTMAgent->new;
+#pod
+#pod Creates a new agent.
+#pod
+#pod =cut
 
 sub new {
     my ($class) = @_;
@@ -28,6 +115,23 @@ sub new {
     return $self;
 }
 
+#pod =head2 $ua->api_key($key);
+#pod
+#pod =head2 $ua->api_secret($secret);
+#pod
+#pod Set the API key and secret. These are obtained from the people are
+#pod RememberTheMilk.com.
+#pod
+#pod =head2 $ua->verbose('netin netout');
+#pod
+#pod Sets what type of traces the module should print. You can use 'netout' to print
+#pod all the outgoing messages, 'netin' to print all the incoming messages.
+#pod
+#pod =head2 $err = $ua->error;
+#pod
+#pod Get a message describing the last error that happened.
+#pod
+#pod =cut
 
 # Create accessors
 BEGIN {
@@ -43,6 +147,12 @@ BEGIN {
     eval $subs;
 }
 
+#pod =head2 $ua->init;
+#pod
+#pod Performs authentication with RTM and various other book-keeping
+#pod initialisations.
+#pod
+#pod =cut
 
 sub init {
     my ($self) = @_;
@@ -87,6 +197,15 @@ sub init {
     }
 }
 
+#pod =head2 $ua->get_auth_url;
+#pod
+#pod Performs the beginning of the authentication: this returns a URL to which
+#pod the user must then go to allow RTMAgent to access his or her account.
+#pod
+#pod This mecanism is slightly contrieved and designed so that users do not have
+#pod to give their username and password to third party software (like this one).
+#pod
+#pod =cut
 
 sub get_auth_url {
     my ($self) = @_;
@@ -107,6 +226,17 @@ sub get_auth_url {
     return $url;
 }
 
+#pod =head2 @undo = $ua->get_undoable;
+#pod
+#pod Returns the transactions which we know how to undo (unless data has been lost,
+#pod that's all the undo-able transaction that go with the timeline that is saved in
+#pod the state file).
+#pod
+#pod The value returned is a list of { id, op, [ params ] } with id the transaction
+#pod id, op the API method that was called, and params the API parameters that were
+#pod called.
+#pod
+#pod =cut
 
 sub get_undoable {
     my ($self) = @_;
@@ -114,6 +244,11 @@ sub get_undoable {
     return $config->{undo};
 }
 
+#pod =head2 $ua->clear_undo(3);
+#pod
+#pod Removes an undo entry.
+#pod
+#pod =cut
 
 sub clear_undo {
     my ($self, $index) = @_;
@@ -121,6 +256,16 @@ sub clear_undo {
     splice @{$config->{undo}}, $index, 1;
 }
 
+#pod =head1 PRIVATE METHODS
+#pod
+#pod Don't use those and we'll stay friends.
+#pod
+#pod =head2 $ua->sign(@params);
+#pod
+#pod Returns the md5 signature for signing parameters. See RTM Web site for details.
+#pod This should only be useful for the module, don't use it.
+#pod
+#pod =cut
 
 sub sign {
     my ($self, @params) = @_;
@@ -131,6 +276,12 @@ sub sign {
     return md5_hex($self->api_secret."$sign_str");
 }
 
+#pod =head2 $ua->rtm_request("rtm.tasks.getList", "list_id=234", "taskseries_id=2"..)
+#pod
+#pod Signs the parameters, performs the request, returns a parsed XML::Simple
+#pod object.
+#pod
+#pod =cut
 
 sub rtm_request {
     my ($self, $request, @params) = @_;
@@ -198,6 +349,22 @@ sub DESTROY {
     print $f XMLout($config, NoAttr=>1, RootName=>'RTMAgent');
 }
 
+#pod =head1 FILES
+#pod
+#pod =for :list
+#pod = F<~/.rtmagent>
+#pod XML file containing runtime data: frob, timeline, authentication token. This
+#pod file is overwritten on exit, which means you should only have one instance of
+#pod RTMAgent (this should be corrected in a future version).
+#pod
+#pod =head1 SEE ALSO
+#pod
+#pod =for :list
+#pod * C<< L<rtm|https://www.rutschle.net/rtm> >>, example command-line script.
+#pod * L<LWP::UsrAgent>
+#pod * L<XML::Simple>
+#pod
+#pod =cut
 
 1;
 
@@ -205,13 +372,15 @@ __END__
 
 =pod
 
+=encoding UTF-8
+
 =head1 NAME
 
 WebService::RTMAgent - a user agent for the Remember The Milk API
 
 =head1 VERSION
 
-version 0.600
+version 0.601
 
 =head1 SYNOPSIS
 
